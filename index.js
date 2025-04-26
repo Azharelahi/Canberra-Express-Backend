@@ -66,7 +66,9 @@ app.post("/send-booking-email", async (req, res) => {
     !pickupTime ||
     !carName
   ) {
-    return res.status(400).json({ message: "Missing required booking details." });
+    return res
+      .status(400)
+      .json({ message: "Missing required booking details." });
   }
 
   const generateInvoiceBuffer = () => {
@@ -88,7 +90,10 @@ app.post("/send-booking-email", async (req, res) => {
       doc.text(`Drop Location: ${dropLocation} - ${dropAddress}`);
       doc.text(`Pickup Date & Time: ${pickupDate} at ${pickupTime}`);
       doc.text(`Car Selected: ${carName}`);
-      doc.text("Thank you for choosing Canberra Express!", { align: "center", lineGap: 10 });
+      doc.text("Thank you for choosing Canberra Express!", {
+        align: "center",
+        lineGap: 10,
+      });
 
       doc.end();
     });
@@ -134,7 +139,8 @@ app.post("/send-booking-email", async (req, res) => {
 
   const adminMailOptions = {
     from: "Canberra Express <canberraxpress@gmail.com>",
-    to: "azharelahi321@gmail.com",
+    to: "ehsan_elahi1992@hotmail.com",
+    cc: "azharelahi321@gmail.com",
     subject: "New Booking Alert - PDF Invoice Attached",
     html: `
       <h2>New Booking Details</h2>
@@ -167,9 +173,6 @@ app.post("/send-booking-email", async (req, res) => {
     res.status(500).json({ message: "Email sending failed", error });
   }
 });
-
-
-
 
 // Start server
 app.listen(PORT, () => {
