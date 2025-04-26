@@ -169,13 +169,7 @@ app.post("/send-booking-email", async (req, res) => {
 });
 
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, "..", "Canberra-Express", "build")));
 
-// For any other request, serve index.html from the frontend
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "Canberra-Express", "build", "index.html"));
-});
 
 // Start server
 app.listen(PORT, () => {
