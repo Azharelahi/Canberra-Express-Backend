@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = "Mine Secret Key"; // Change this in production
 const allowedOrigins = [
-  "https://canberra-express.vercel.app",
+  "https://www.ozlyft.com.au/","https://canberra-express.vercel.app",
   "http://localhost:4000",
 ];
 const _dirname = path.resolve();
