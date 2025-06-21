@@ -54,7 +54,9 @@ app.post("/send-booking-email", async (req, res) => {
     !pickupTime ||
     !carName
   ) {
-    return res.status(400).json({ message: "Missing required booking details." });
+    return res
+      .status(400)
+      .json({ message: "Missing required booking details." });
   }
 
   const generateInvoiceBuffer = () => {
@@ -98,38 +100,52 @@ app.post("/send-booking-email", async (req, res) => {
       to: clientEmail,
       subject: "Your Booking Confirmation - Canberra Express",
       html: `
-        <h2>Thank You for Your Booking!</h2>
-        <ul>
-          <li><strong>Name:</strong> ${clientName}</li>
-          <li><strong>Phone:</strong> ${clientPhone}</li>
-          <li><strong>Pickup:</strong> ${pickAddress}</li>
-          <li><strong>Drop-off:</strong> ${dropAddress}</li>
-          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-          <li><strong>Car:</strong> ${carName}</li>
-        </ul>
-        <p>Invoice attached.</p>
-      `,
+  <h2>Thank You for Your Booking!</h2>
+  <p>Details:</p>
+  <ul>
+    <li><strong>Name:</strong> ${clientName}</li>
+    <li><strong>Phone:</strong> ${clientPhone}</li>
+    <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      pickAddress
+    )}" target="_blank">${pickAddress}</a></li>
+    <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      dropAddress
+    )}" target="_blank">${dropAddress}</a></li>
+    <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
+    <li><strong>Car:</strong> ${carName}</li>
+  </ul>
+  <p>Invoice attached.</p>
+`,
+
       attachments: [{ filename: "Invoice.pdf", content: invoiceBuffer }],
     });
 
     await transporter.sendMail({
       from: "Canberra Express <canberraxpress@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
-      cc: "azharelahi321@gmail.com",
+      cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
+
       subject: "New Booking - Invoice Attached",
       html: `
-        <h2>New Booking Received</h2>
-        <ul>
-          <li><strong>Name:</strong> ${clientName}</li>
-          <li><strong>Email:</strong> ${clientEmail}</li>
-          <li><strong>Phone:</strong> ${clientPhone}</li>
-          <li><strong>Pickup:</strong> ${pickAddress}</li>
-          <li><strong>Drop-off:</strong> ${dropAddress}</li>
-          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-          <li><strong>Car:</strong> ${carName}</li>
-        </ul>
-      `,
-      attachments: [{ filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer }],
+  <h2>New Booking Received</h2>
+  <ul>
+    <li><strong>Name:</strong> ${clientName}</li>
+    <li><strong>Email:</strong> ${clientEmail}</li>
+    <li><strong>Phone:</strong> ${clientPhone}</li>
+    <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      pickAddress
+    )}" target="_blank">${pickAddress}</a></li>
+    <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      dropAddress
+    )}" target="_blank">${dropAddress}</a></li>
+    <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
+    <li><strong>Car:</strong> ${carName}</li>
+  </ul>
+`,
+
+      attachments: [
+        { filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer },
+      ],
     });
 
     res.status(200).json({ message: "Emails sent successfully." });
