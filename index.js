@@ -61,24 +61,87 @@ app.post("/send-booking-email", async (req, res) => {
 
   const generateInvoiceBuffer = () => {
     return new Promise((resolve) => {
-      const doc = new PDFDocument();
+      const doc = new PDFDocument({ margin: 50 });
       const buffers = [];
 
       doc.on("data", buffers.push.bind(buffers));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-      doc.fontSize(20).text("Booking Invoice", { align: "center" }).moveDown();
-      doc.fontSize(12).text(`Name: ${clientName}`);
-      doc.text(`Phone: ${clientPhone}`);
-      doc.text(`Email: ${clientEmail}`);
-      doc.text(`Pickup Address: ${pickAddress}`);
-      doc.text(`Drop-off Address: ${dropAddress}`);
-      doc.text(`Date & Time: ${pickupDate} at ${pickupTime}`);
-      doc.text(`Car: ${carName}`);
-      doc.text("Thank you for choosing Canberra Express!", {
-        align: "center",
-        lineGap: 10,
-      });
+      // Header
+      doc
+        .fillColor("#000")
+        .fontSize(26)
+        .font("Helvetica-Bold")
+        .text("OZLYFT Booking Invoice", { align: "center" })
+        .moveDown(0.5);
+
+      doc
+        .fontSize(14)
+        .fillColor("#555")
+        .text("Your Ride, Our Responsibility", { align: "center" })
+        .moveDown(1.5);
+
+      // Line separator
+      doc
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .strokeColor("#CCCCCC")
+        .stroke()
+        .moveDown(1.5);
+
+      // Booking details
+      const labelStyle = { continued: true, underline: false };
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(12)
+        .fillColor("#222")
+        .text("Client Name: ", labelStyle);
+      doc.font("Helvetica").text(clientName).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Phone: ", labelStyle);
+      doc.font("Helvetica").text(clientPhone).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Email: ", labelStyle);
+      doc.font("Helvetica").text(clientEmail).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Pickup Address: ", labelStyle);
+      doc.font("Helvetica").text(pickAddress).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Drop-off Address: ", labelStyle);
+      doc.font("Helvetica").text(dropAddress).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Pickup Date & Time: ", labelStyle);
+      doc
+        .font("Helvetica")
+        .text(`${pickupDate} at ${pickupTime}`)
+        .moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Car Selected: ", labelStyle);
+      doc.font("Helvetica").text(carName).moveDown(2);
+
+      // Line separator
+      doc
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .strokeColor("#EEEEEE")
+        .stroke()
+        .moveDown(1.5);
+
+      // Thank You note
+      doc
+        .font("Helvetica-Oblique")
+        .fontSize(13)
+        .fillColor("#007BFF")
+        .text("Thank you for choosing OZLYFT!", { align: "center" })
+        .moveDown(0.5);
+
+      doc
+        .font("Helvetica")
+        .fontSize(12)
+        .fillColor("#333")
+        .text("We wish you a comfortable and safe journey.", {
+          align: "center",
+        });
 
       doc.end();
     });
@@ -96,9 +159,9 @@ app.post("/send-booking-email", async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: "Canberra Express <canberraxpress@gmail.com>",
+      from: "OZLYFT <canberraxpress@gmail.com>",
       to: clientEmail,
-      subject: "Your Booking Confirmation - Canberra Express",
+      subject: "Your Booking Confirmation - OZLYFT",
       html: `
   <h2>Thank You for Your Booking!</h2>
   <p>Details:</p>
@@ -121,7 +184,7 @@ app.post("/send-booking-email", async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: "Canberra Express <canberraxpress@gmail.com>",
+      from: "OZLYFT Rentals <canberraxpress@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
       cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
 
