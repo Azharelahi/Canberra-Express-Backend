@@ -67,7 +67,6 @@ app.post("/send-booking-email", async (req, res) => {
       doc.on("data", buffers.push.bind(buffers));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-      // Header
       doc
         .fillColor("#000")
         .fontSize(26)
@@ -81,7 +80,6 @@ app.post("/send-booking-email", async (req, res) => {
         .text("Your Ride, Our Responsibility", { align: "center" })
         .moveDown(1.5);
 
-      // Line separator
       doc
         .moveTo(50, doc.y)
         .lineTo(550, doc.y)
@@ -89,7 +87,6 @@ app.post("/send-booking-email", async (req, res) => {
         .stroke()
         .moveDown(1.5);
 
-      // Booking details
       const labelStyle = { continued: true, underline: false };
       doc
         .font("Helvetica-Bold")
@@ -111,15 +108,11 @@ app.post("/send-booking-email", async (req, res) => {
       doc.font("Helvetica").text(dropAddress).moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Pickup Date & Time: ", labelStyle);
-      doc
-        .font("Helvetica")
-        .text(`${pickupDate} at ${pickupTime}`)
-        .moveDown(0.5);
+      doc.font("Helvetica").text(`${pickupDate} at ${pickupTime}`).moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Car Selected: ", labelStyle);
       doc.font("Helvetica").text(carName).moveDown(2);
 
-      // Line separator
       doc
         .moveTo(50, doc.y)
         .lineTo(550, doc.y)
@@ -127,7 +120,6 @@ app.post("/send-booking-email", async (req, res) => {
         .stroke()
         .moveDown(1.5);
 
-      // Thank You note
       doc
         .font("Helvetica-Oblique")
         .fontSize(13)
@@ -147,8 +139,74 @@ app.post("/send-booking-email", async (req, res) => {
     });
   };
 
+  const generateAdminInvoiceBuffer = () => {
+    return new Promise((resolve) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers = [];
+
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
+
+      const bookingRef = `OZ-${Date.now()}`;
+
+      doc
+        .fillColor("#000")
+        .fontSize(24)
+        .font("Helvetica-Bold")
+        .text("OZLYFT Booking - Admin Copy", { align: "center" })
+        .moveDown(1);
+
+      doc
+        .fontSize(12)
+        .font("Helvetica-Oblique")
+        .fillColor("#444")
+        .text(`Booking Reference: ${bookingRef}`, { align: "right" })
+        .moveDown(0.5);
+
+      doc
+        .fontSize(12)
+        .fillColor("#555")
+        .text(`Generated on: ${new Date().toLocaleString()}`, { align: "right" })
+        .moveDown(1);
+
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#CCCCCC").stroke().moveDown(1);
+
+      doc.font("Helvetica-Bold").fontSize(12).fillColor("#222").text("Client Name:");
+      doc.font("Helvetica").text(clientName).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Client Email:");
+      doc.font("Helvetica").text(clientEmail).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Client Phone:");
+      doc.font("Helvetica").text(clientPhone).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Pickup Address:");
+      doc.font("Helvetica").text(pickAddress).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Drop-off Address:");
+      doc.font("Helvetica").text(dropAddress).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Pickup Date & Time:");
+      doc.font("Helvetica").text(`${pickupDate} at ${pickupTime}`).moveDown(0.5);
+
+      doc.font("Helvetica-Bold").text("Selected Car:");
+      doc.font("Helvetica").text(carName).moveDown(2);
+
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#EEEEEE").stroke().moveDown(1);
+
+      doc
+        .font("Helvetica-Oblique")
+        .fontSize(11)
+        .fillColor("#007BFF")
+        .text("For internal use only. Please do not share with clients.", { align: "center" });
+
+      doc.end();
+    });
+  };
+
   try {
     const invoiceBuffer = await generateInvoiceBuffer();
+    const adminInvoiceBuffer = await generateAdminInvoiceBuffer();
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -158,56 +216,56 @@ app.post("/send-booking-email", async (req, res) => {
       },
     });
 
+    // Send to client
     await transporter.sendMail({
       from: "OZLYFT <canberraxpress@gmail.com>",
       to: clientEmail,
       subject: "Your Booking Confirmation - OZLYFT",
       html: `
-  <h2>Thank You for Your Booking!</h2>
-  <p>Details:</p>
-  <ul>
-    <li><strong>Name:</strong> ${clientName}</li>
-    <li><strong>Phone:</strong> ${clientPhone}</li>
-    <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      pickAddress
-    )}" target="_blank">${pickAddress}</a></li>
-    <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      dropAddress
-    )}" target="_blank">${dropAddress}</a></li>
-    <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-    <li><strong>Car:</strong> ${carName}</li>
-  </ul>
-  <p>Invoice attached.</p>
-`,
-
+        <h2>Thank You for Your Booking!</h2>
+        <p>Details:</p>
+        <ul>
+          <li><strong>Name:</strong> ${clientName}</li>
+          <li><strong>Phone:</strong> ${clientPhone}</li>
+          <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            pickAddress
+          )}" target="_blank">${pickAddress}</a></li>
+          <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            dropAddress
+          )}" target="_blank">${dropAddress}</a></li>
+          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
+          <li><strong>Car:</strong> ${carName}</li>
+        </ul>
+        <p>Invoice attached.</p>
+      `,
       attachments: [{ filename: "Invoice.pdf", content: invoiceBuffer }],
     });
 
+    // Send to admin
     await transporter.sendMail({
       from: "OZLYFT Rentals <canberraxpress@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
       cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
-
       subject: "New Booking - Invoice Attached",
       html: `
-  <h2>New Booking Received</h2>
-  <ul>
-    <li><strong>Name:</strong> ${clientName}</li>
-    <li><strong>Email:</strong> ${clientEmail}</li>
-    <li><strong>Phone:</strong> ${clientPhone}</li>
-    <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      pickAddress
-    )}" target="_blank">${pickAddress}</a></li>
-    <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      dropAddress
-    )}" target="_blank">${dropAddress}</a></li>
-    <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-    <li><strong>Car:</strong> ${carName}</li>
-  </ul>
-`,
-
+        <h2>New Booking Received</h2>
+        <ul>
+          <li><strong>Name:</strong> ${clientName}</li>
+          <li><strong>Email:</strong> ${clientEmail}</li>
+          <li><strong>Phone:</strong> ${clientPhone}</li>
+          <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            pickAddress
+          )}" target="_blank">${pickAddress}</a></li>
+          <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            dropAddress
+          )}" target="_blank">${dropAddress}</a></li>
+          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
+          <li><strong>Car:</strong> ${carName}</li>
+        </ul>
+      `,
       attachments: [
         { filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer },
+        { filename: "Admin-Copy-Invoice.pdf", content: adminInvoiceBuffer },
       ],
     });
 
