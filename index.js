@@ -1,10 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 const dotenv = require("dotenv");
-const path = require("path");
 
 dotenv.config();
 const app = express();
@@ -16,9 +14,7 @@ const allowedOrigins = [
   "http://localhost:4000",
 ];
 
-// Middleware
 app.use(express.json());
-app.use(cookieParser());
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -29,50 +25,40 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Root route
 app.get("/", (req, res) => {
   res.send("Canberra Express Backend is running");
 });
 
-// Booking Email Route
 app.post("/send-booking-email", async (req, res) => {
   const {
     clientName,
     clientPhone,
     clientEmail,
-    pickLocation,
     pickAddress,
-    dropLocation,
     dropAddress,
     pickupDate,
     pickupTime,
     carName,
   } = req.body;
 
-  // Basic validation
   if (
     !clientName ||
     !clientPhone ||
     !clientEmail ||
-    !pickLocation ||
-    !dropLocation ||
+    !pickAddress ||
+    !dropAddress ||
     !pickupDate ||
     !pickupTime ||
     !carName
   ) {
-    return res
-      .status(400)
-      .json({ message: "Missing required booking details." });
+    return res.status(400).json({ message: "Missing required booking details." });
   }
 
-  // PDF invoice generator
   const generateInvoiceBuffer = () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const doc = new PDFDocument();
       const buffers = [];
 
@@ -83,8 +69,8 @@ app.post("/send-booking-email", async (req, res) => {
       doc.fontSize(12).text(`Name: ${clientName}`);
       doc.text(`Phone: ${clientPhone}`);
       doc.text(`Email: ${clientEmail}`);
-      doc.text(`Pickup: ${pickLocation} - ${pickAddress}`);
-      doc.text(`Drop-off: ${dropLocation} - ${dropAddress}`);
+      doc.text(`Pickup Address: ${pickAddress}`);
+      doc.text(`Drop-off Address: ${dropAddress}`);
       doc.text(`Date & Time: ${pickupDate} at ${pickupTime}`);
       doc.text(`Car: ${carName}`);
       doc.text("Thank you for choosing Canberra Express!", {
@@ -107,19 +93,17 @@ app.post("/send-booking-email", async (req, res) => {
       },
     });
 
-    // Email to Client
     await transporter.sendMail({
       from: "Canberra Express <canberraxpress@gmail.com>",
       to: clientEmail,
       subject: "Your Booking Confirmation - Canberra Express",
       html: `
         <h2>Thank You for Your Booking!</h2>
-        <p>Details:</p>
         <ul>
           <li><strong>Name:</strong> ${clientName}</li>
           <li><strong>Phone:</strong> ${clientPhone}</li>
-          <li><strong>Pickup:</strong> ${pickLocation} - ${pickAddress}</li>
-          <li><strong>Drop-off:</strong> ${dropLocation} - ${dropAddress}</li>
+          <li><strong>Pickup:</strong> ${pickAddress}</li>
+          <li><strong>Drop-off:</strong> ${dropAddress}</li>
           <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
           <li><strong>Car:</strong> ${carName}</li>
         </ul>
@@ -128,7 +112,6 @@ app.post("/send-booking-email", async (req, res) => {
       attachments: [{ filename: "Invoice.pdf", content: invoiceBuffer }],
     });
 
-    // Email to Admin
     await transporter.sendMail({
       from: "Canberra Express <canberraxpress@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
@@ -140,15 +123,13 @@ app.post("/send-booking-email", async (req, res) => {
           <li><strong>Name:</strong> ${clientName}</li>
           <li><strong>Email:</strong> ${clientEmail}</li>
           <li><strong>Phone:</strong> ${clientPhone}</li>
-          <li><strong>Pickup:</strong> ${pickLocation} - ${pickAddress}</li>
-          <li><strong>Drop-off:</strong> ${dropLocation} - ${dropAddress}</li>
+          <li><strong>Pickup:</strong> ${pickAddress}</li>
+          <li><strong>Drop-off:</strong> ${dropAddress}</li>
           <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
           <li><strong>Car:</strong> ${carName}</li>
         </ul>
       `,
-      attachments: [
-        { filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer },
-      ],
+      attachments: [{ filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer }],
     });
 
     res.status(200).json({ message: "Emails sent successfully." });
@@ -158,5 +139,4 @@ app.post("/send-booking-email", async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
