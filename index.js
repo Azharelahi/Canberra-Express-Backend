@@ -12,6 +12,8 @@ const allowedOrigins = [
   "https://www.ozlyft.com.au",
   "https://canberra-express.vercel.app",
   "http://localhost:4000",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
 ];
 
 app.use(express.json());
@@ -27,6 +29,19 @@ app.use(
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.get("/", (req, res) => {
   res.send("Canberra Express Backend is running");
@@ -108,7 +123,10 @@ app.post("/send-booking-email", async (req, res) => {
       doc.font("Helvetica").text(dropAddress).moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Pickup Date & Time: ", labelStyle);
-      doc.font("Helvetica").text(`${pickupDate} at ${pickupTime}`).moveDown(0.5);
+      doc
+        .font("Helvetica")
+        .text(`${pickupDate} at ${pickupTime}`)
+        .moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Car Selected: ", labelStyle);
       doc.font("Helvetica").text(carName).moveDown(2);
@@ -166,12 +184,23 @@ app.post("/send-booking-email", async (req, res) => {
       doc
         .fontSize(12)
         .fillColor("#555")
-        .text(`Generated on: ${new Date().toLocaleString()}`, { align: "right" })
+        .text(`Generated on: ${new Date().toLocaleString()}`, {
+          align: "right",
+        })
         .moveDown(1);
 
-      doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#CCCCCC").stroke().moveDown(1);
+      doc
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .strokeColor("#CCCCCC")
+        .stroke()
+        .moveDown(1);
 
-      doc.font("Helvetica-Bold").fontSize(12).fillColor("#222").text("Client Name:");
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(12)
+        .fillColor("#222")
+        .text("Client Name:");
       doc.font("Helvetica").text(clientName).moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Client Email:");
@@ -187,18 +216,28 @@ app.post("/send-booking-email", async (req, res) => {
       doc.font("Helvetica").text(dropAddress).moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Pickup Date & Time:");
-      doc.font("Helvetica").text(`${pickupDate} at ${pickupTime}`).moveDown(0.5);
+      doc
+        .font("Helvetica")
+        .text(`${pickupDate} at ${pickupTime}`)
+        .moveDown(0.5);
 
       doc.font("Helvetica-Bold").text("Selected Car:");
       doc.font("Helvetica").text(carName).moveDown(2);
 
-      doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#EEEEEE").stroke().moveDown(1);
+      doc
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .strokeColor("#EEEEEE")
+        .stroke()
+        .moveDown(1);
 
       doc
         .font("Helvetica-Oblique")
         .fontSize(11)
         .fillColor("#007BFF")
-        .text("For internal use only. Please do not share with clients.", { align: "center" });
+        .text("For internal use only. Please do not share with clients.", {
+          align: "center",
+        });
 
       doc.end();
     });
