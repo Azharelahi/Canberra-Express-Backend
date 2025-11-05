@@ -250,14 +250,14 @@ app.post("/send-booking-email", async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "canberraxpress@gmail.com",
+        user: "azharelahi321@gmail.com",
         pass: process.env.PASSWORD,
       },
     });
 
     // Send to client
     await transporter.sendMail({
-      from: "OZLYFT <canberraxpress@gmail.com>",
+      from: "OZLYFT <azharelahi321@gmail.com>",
       to: clientEmail,
       subject: "Your Booking Confirmation - OZLYFT",
       html: `
@@ -282,7 +282,7 @@ app.post("/send-booking-email", async (req, res) => {
 
     // Send to admin
     await transporter.sendMail({
-      from: "OZLYFT Rentals <canberraxpress@gmail.com>",
+      from: "OZLYFT Rentals <azharelahi321@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
       cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
       subject: "New Booking - Invoice Attached",
