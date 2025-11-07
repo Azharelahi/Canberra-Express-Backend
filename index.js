@@ -59,7 +59,6 @@ app.post("/send-booking-email", async (req, res) => {
       carName,
     } = req.body;
 
-    // --- Validation ---
     if (
       !clientName ||
       !clientPhone ||
@@ -70,14 +69,11 @@ app.post("/send-booking-email", async (req, res) => {
       !pickupTime ||
       !carName
     ) {
-      return res
-        .status(400)
-        .json({ message: "Missing required booking details." });
+      return res.status(400).json({ message: "Missing required booking details." });
     }
 
     console.log("📦 Booking data received for:", clientName);
 
-    // --- Setup Mail Transporter ---
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -86,49 +82,73 @@ app.post("/send-booking-email", async (req, res) => {
       },
     });
 
-    // --- Client Email ---
+    // ✉️ CLIENT EMAIL
     const clientMail = {
-      from: "OZLYFT <ozlyft@gmail.com>",
+      from: "OZLYFT 🚖 <ozlyft@gmail.com>",
       to: clientEmail,
-      subject: "Your Booking Confirmation - OZLYFT",
+      subject: `🎉 Your OZLYFT Booking Confirmation — ${pickupDate}`,
       html: `
-        <h2>Thank You for Your Booking!</h2>
-        <p>Dear ${clientName}, here are your booking details:</p>
-        <ul>
-          <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            pickAddress
-          )}" target="_blank">${pickAddress}</a></li>
-          <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            dropAddress
-          )}" target="_blank">${dropAddress}</a></li>
-          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-          <li><strong>Car:</strong> ${carName}</li>
-        </ul>
-        <p>We’ll contact you shortly to confirm your booking. Thank you for choosing OZLYFT!</p>
+        <div style="font-family: Arial, sans-serif; background-color: #fafafa; padding: 25px; border-radius: 10px;">
+          <h2 style="color: #222;">Hey ${clientName}! 👋</h2>
+          <p style="font-size: 16px; color: #444;">
+            Thank you for booking with <strong>OZLYFT</strong> 🚖. We're thrilled to have you on board!
+          </p>
+
+          <div style="background-color: #fff; padding: 15px 20px; border: 1px solid #eee; border-radius: 8px; margin-top: 10px;">
+            <h3 style="color: #ffcc00;">📅 Booking Details</h3>
+            <ul style="list-style: none; padding-left: 0; line-height: 1.7;">
+              <li><strong>🚗 Car:</strong> ${carName}</li>
+              <li><strong>📍 Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickAddress)}" target="_blank" style="color:#007BFF;">${pickAddress}</a></li>
+              <li><strong>🎯 Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dropAddress)}" target="_blank" style="color:#007BFF;">${dropAddress}</a></li>
+              <li><strong>🕒 Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
+              <li><strong>📞 Contact:</strong> ${clientPhone}</li>
+            </ul>
+          </div>
+
+          <p style="margin-top: 20px; font-size: 15px; color: #444;">
+            We'll reach out shortly to confirm your booking. Get ready for a smooth, comfortable ride! 🌟
+          </p>
+
+          <p style="margin-top: 20px; font-size: 14px; color: #777;">
+            Safe travels,<br>
+            <strong>The OZLYFT Team 🚖</strong><br>
+            <a href="https://www.ozlyft.com.au" style="color:#007BFF;">www.ozlyft.com.au</a>
+          </p>
+        </div>
       `,
     };
 
-    // --- Admin Email ---
+    // ✉️ ADMIN EMAIL
     const adminMail = {
-      // to: "ehsan_elahi1992@hotmail.com", // cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
-      from: "OZLYFT <ozlyft@gmail.com>",
-      to: "azharelahi321@gmail.com",
-      subject: "New Booking Received - OZLYFT",
+      from: "OZLYFT 🚖 <ozlyft@gmail.com>",
+      to: "ehsan_elahi1992@hotmail.com",
+      cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
+      subject: `📩 New Booking Received — ${clientName} (${pickupDate})`,
       html: `
-        <h2>New Booking Received</h2>
-        <ul>
-          <li><strong>Name:</strong> ${clientName}</li>
-          <li><strong>Email:</strong> ${clientEmail}</li>
-          <li><strong>Phone:</strong> ${clientPhone}</li>
-          <li><strong>Pickup:</strong> ${pickAddress}</li>
-          <li><strong>Drop-off:</strong> ${dropAddress}</li>
-          <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-          <li><strong>Car:</strong> ${carName}</li>
-        </ul>
+        <div style="font-family: Arial, sans-serif; background-color: #fefefe; padding: 20px; border-radius: 8px;">
+          <h2 style="color: #000;">🚨 New Booking Alert!</h2>
+          <p style="font-size: 15px; color: #444;">A new booking has just been received via OZLYFT:</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <tr><td style="padding: 8px;"><strong>👤 Name:</strong></td><td>${clientName}</td></tr>
+            <tr><td style="padding: 8px;"><strong>📧 Email:</strong></td><td>${clientEmail}</td></tr>
+            <tr><td style="padding: 8px;"><strong>📞 Phone:</strong></td><td>${clientPhone}</td></tr>
+            <tr><td style="padding: 8px;"><strong>📍 Pickup:</strong></td><td>${pickAddress}</td></tr>
+            <tr><td style="padding: 8px;"><strong>🎯 Drop-off:</strong></td><td>${dropAddress}</td></tr>
+            <tr><td style="padding: 8px;"><strong>🗓️ Date & Time:</strong></td><td>${pickupDate} at ${pickupTime}</td></tr>
+            <tr><td style="padding: 8px;"><strong>🚗 Car Selected:</strong></td><td>${carName}</td></tr>
+          </table>
+
+          <p style="margin-top: 15px; font-size: 14px; color: #777;">
+            📅 Received on: <strong>${new Date().toLocaleString()}</strong>
+          </p>
+
+          <p style="margin-top: 20px; font-size: 14px; color: #444;">
+            — OZLYFT Booking System 🚖
+          </p>
+        </div>
       `,
     };
 
-    // --- Send Emails ---
     console.log("📧 Sending client and admin emails...");
     await Promise.all([
       transporter.sendMail(clientMail),
