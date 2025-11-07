@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
-const PDFDocument = require("pdfkit");
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -46,6 +45,7 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("Ozlyft Backend is running");
 });
+
 app.post("/send-booking-email", async (req, res) => {
   try {
     const {
@@ -77,114 +77,16 @@ app.post("/send-booking-email", async (req, res) => {
 
     console.log("📦 Booking data received for:", clientName);
 
-    // --- Helper function for generating invoice PDFs ---
-    const generateInvoice = (type) => {
-      return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ margin: 50 });
-        const buffers = [];
-
-        doc.on("data", (chunk) => buffers.push(chunk));
-        doc.on("end", () => resolve(Buffer.concat(buffers)));
-        doc.on("error", reject);
-
-        // Title
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(24)
-          .fillColor("#000")
-          .text(
-            type === "client"
-              ? "OZLYFT Booking Invoice"
-              : "OZLYFT Booking - Admin Copy",
-            { align: "center" }
-          )
-          .moveDown(1);
-
-        if (type === "admin") {
-          const ref = `OZ-${Date.now()}`;
-          doc
-            .fontSize(12)
-            .fillColor("#555")
-            .text(`Booking Reference: ${ref}`, { align: "right" })
-            .moveDown(0.5);
-          doc
-            .text(`Generated On: ${new Date().toLocaleString()}`, {
-              align: "right",
-            })
-            .moveDown(1);
-        }
-
-        doc
-          .moveTo(50, doc.y)
-          .lineTo(550, doc.y)
-          .strokeColor("#cccccc")
-          .stroke()
-          .moveDown(1);
-
-        const addField = (label, value) => {
-          doc
-            .font("Helvetica-Bold")
-            .fillColor("#222")
-            .text(`${label}:`, { continued: true });
-          doc
-            .font("Helvetica")
-            .fillColor("#000")
-            .text(` ${value}`)
-            .moveDown(0.4);
-        };
-
-        addField("Client Name", clientName);
-        addField("Client Phone", clientPhone);
-        addField("Client Email", clientEmail);
-        addField("Pickup Address", pickAddress);
-        addField("Drop-off Address", dropAddress);
-        addField("Pickup Date & Time", `${pickupDate} at ${pickupTime}`);
-        addField("Car Selected", carName);
-
-        doc.moveDown(1.5);
-        doc
-          .moveTo(50, doc.y)
-          .lineTo(550, doc.y)
-          .strokeColor("#eeeeee")
-          .stroke()
-          .moveDown(1.5);
-
-        doc
-          .font("Helvetica-Oblique")
-          .fontSize(12)
-          .fillColor("#007BFF")
-          .text(
-            type === "client"
-              ? "Thank you for choosing OZLYFT! Have a safe journey."
-              : "For internal use only. Do not share externally.",
-            { align: "center" }
-          );
-
-        doc.end();
-      });
-    };
-
-    // --- Generate PDFs concurrently ---
-    console.log("🧾 Generating invoices...");
-    const [clientInvoice, adminInvoice] = await Promise.all([
-      generateInvoice("client"),
-      generateInvoice("admin"),
-    ]);
-    console.log("✅ Invoices generated successfully.");
-
-    // --- Setup Mail Transporters (separate for clarity) ---
-    const auth = { user: "ozlyft@gmail.com", pass: process.env.PASSWORD };
-
-    const clientTransporter = nodemailer.createTransport({
+    // --- Setup Mail Transporter ---
+    const transporter = nodemailer.createTransport({
       service: "gmail",
-      auth,
-    });
-    const adminTransporter = nodemailer.createTransport({
-      service: "gmail",
-      auth,
+      auth: {
+        user: "ozlyft@gmail.com",
+        pass: process.env.PASSWORD,
+      },
     });
 
-    // --- Prepare Email Options ---
+    // --- Client Email ---
     const clientMail = {
       from: "OZLYFT <ozlyft@gmail.com>",
       to: clientEmail,
@@ -202,17 +104,16 @@ app.post("/send-booking-email", async (req, res) => {
           <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
           <li><strong>Car:</strong> ${carName}</li>
         </ul>
-        <p>Your invoice is attached below.</p>
+        <p>We’ll contact you shortly to confirm your booking. Thank you for choosing OZLYFT!</p>
       `,
-      attachments: [{ filename: "Invoice.pdf", content: clientInvoice }],
     };
 
+    // --- Admin Email ---
     const adminMail = {
+      // to: "ehsan_elahi1992@hotmail.com", // cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
       from: "OZLYFT <ozlyft@gmail.com>",
       to: "azharelahi321@gmail.com",
-      // to: "ehsan_elahi1992@hotmail.com",
-      // cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
-      subject: "New Booking - Admin Copy",
+      subject: "New Booking Received - OZLYFT",
       html: `
         <h2>New Booking Received</h2>
         <ul>
@@ -225,295 +126,21 @@ app.post("/send-booking-email", async (req, res) => {
           <li><strong>Car:</strong> ${carName}</li>
         </ul>
       `,
-      attachments: [
-        { filename: "Client-Invoice.pdf", content: clientInvoice },
-        { filename: "Admin-Invoice.pdf", content: adminInvoice },
-      ],
     };
 
-    // --- Send Client Email ---
-    console.log("📧 Sending client email...");
-    await clientTransporter.sendMail(clientMail);
-    console.log(`✅ Client email sent to: ${clientEmail}`);
+    // --- Send Emails ---
+    console.log("📧 Sending client and admin emails...");
+    await Promise.all([
+      transporter.sendMail(clientMail),
+      transporter.sendMail(adminMail),
+    ]);
 
-    // --- Send Admin Email ---
-    console.log("📨 Sending admin email...");
-    await adminTransporter.sendMail(adminMail);
-    console.log("✅ Admin email sent successfully.");
-
-    return res.status(200).json({ message: "Both emails sent successfully." });
+    console.log("✅ Both emails sent successfully.");
+    return res.status(200).json({ message: "Emails sent successfully." });
   } catch (error) {
     console.error("🚨 Email Sending Error:", error.message);
-    res.status(500).json({ message: "Failed to send one or more emails." });
+    res.status(500).json({ message: "Failed to send emails." });
   }
 });
-
-// app.post("/send-booking-email", async (req, res) => {
-//   const {
-//     clientName,
-//     clientPhone,
-//     clientEmail,
-//     pickAddress,
-//     dropAddress,
-//     pickupDate,
-//     pickupTime,
-//     carName,
-//   } = req.body;
-
-//   if (
-//     !clientName ||
-//     !clientPhone ||
-//     !clientEmail ||
-//     !pickAddress ||
-//     !dropAddress ||
-//     !pickupDate ||
-//     !pickupTime ||
-//     !carName
-//   ) {
-//     return res
-//       .status(400)
-//       .json({ message: "Missing required booking details." });
-//   }
-
-//   const generateInvoiceBuffer = () => {
-//     return new Promise((resolve) => {
-//       const doc = new PDFDocument({ margin: 50 });
-//       const buffers = [];
-
-//       doc.on("data", buffers.push.bind(buffers));
-//       doc.on("end", () => resolve(Buffer.concat(buffers)));
-
-//       doc
-//         .fillColor("#000")
-//         .fontSize(26)
-//         .font("Helvetica-Bold")
-//         .text("OZLYFT Booking Invoice", { align: "center" })
-//         .moveDown(0.5);
-
-//       doc
-//         .fontSize(14)
-//         .fillColor("#555")
-//         .text("Your Ride, Our Responsibility", { align: "center" })
-//         .moveDown(1.5);
-
-//       doc
-//         .moveTo(50, doc.y)
-//         .lineTo(550, doc.y)
-//         .strokeColor("#CCCCCC")
-//         .stroke()
-//         .moveDown(1.5);
-
-//       const labelStyle = { continued: true, underline: false };
-//       doc
-//         .font("Helvetica-Bold")
-//         .fontSize(12)
-//         .fillColor("#222")
-//         .text("Client Name: ", labelStyle);
-//       doc.font("Helvetica").text(clientName).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Phone: ", labelStyle);
-//       doc.font("Helvetica").text(clientPhone).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Email: ", labelStyle);
-//       doc.font("Helvetica").text(clientEmail).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Pickup Address: ", labelStyle);
-//       doc.font("Helvetica").text(pickAddress).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Drop-off Address: ", labelStyle);
-//       doc.font("Helvetica").text(dropAddress).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Pickup Date & Time: ", labelStyle);
-//       doc
-//         .font("Helvetica")
-//         .text(`${pickupDate} at ${pickupTime}`)
-//         .moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Car Selected: ", labelStyle);
-//       doc.font("Helvetica").text(carName).moveDown(2);
-
-//       doc
-//         .moveTo(50, doc.y)
-//         .lineTo(550, doc.y)
-//         .strokeColor("#EEEEEE")
-//         .stroke()
-//         .moveDown(1.5);
-
-//       doc
-//         .font("Helvetica-Oblique")
-//         .fontSize(13)
-//         .fillColor("#007BFF")
-//         .text("Thank you for choosing OZLYFT!", { align: "center" })
-//         .moveDown(0.5);
-
-//       doc
-//         .font("Helvetica")
-//         .fontSize(12)
-//         .fillColor("#333")
-//         .text("We wish you a comfortable and safe journey.", {
-//           align: "center",
-//         });
-
-//       doc.end();
-//     });
-//   };
-
-//   const generateAdminInvoiceBuffer = () => {
-//     return new Promise((resolve) => {
-//       const doc = new PDFDocument({ margin: 50 });
-//       const buffers = [];
-
-//       doc.on("data", buffers.push.bind(buffers));
-//       doc.on("end", () => resolve(Buffer.concat(buffers)));
-
-//       const bookingRef = `OZ-${Date.now()}`;
-
-//       doc
-//         .fillColor("#000")
-//         .fontSize(24)
-//         .font("Helvetica-Bold")
-//         .text("OZLYFT Booking - Admin Copy", { align: "center" })
-//         .moveDown(1);
-
-//       doc
-//         .fontSize(12)
-//         .font("Helvetica-Oblique")
-//         .fillColor("#444")
-//         .text(`Booking Reference: ${bookingRef}`, { align: "right" })
-//         .moveDown(0.5);
-
-//       doc
-//         .fontSize(12)
-//         .fillColor("#555")
-//         .text(`Generated on: ${new Date().toLocaleString()}`, {
-//           align: "right",
-//         })
-//         .moveDown(1);
-
-//       doc
-//         .moveTo(50, doc.y)
-//         .lineTo(550, doc.y)
-//         .strokeColor("#CCCCCC")
-//         .stroke()
-//         .moveDown(1);
-
-//       doc
-//         .font("Helvetica-Bold")
-//         .fontSize(12)
-//         .fillColor("#222")
-//         .text("Client Name:");
-//       doc.font("Helvetica").text(clientName).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Client Email:");
-//       doc.font("Helvetica").text(clientEmail).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Client Phone:");
-//       doc.font("Helvetica").text(clientPhone).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Pickup Address:");
-//       doc.font("Helvetica").text(pickAddress).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Drop-off Address:");
-//       doc.font("Helvetica").text(dropAddress).moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Pickup Date & Time:");
-//       doc
-//         .font("Helvetica")
-//         .text(`${pickupDate} at ${pickupTime}`)
-//         .moveDown(0.5);
-
-//       doc.font("Helvetica-Bold").text("Selected Car:");
-//       doc.font("Helvetica").text(carName).moveDown(2);
-
-//       doc
-//         .moveTo(50, doc.y)
-//         .lineTo(550, doc.y)
-//         .strokeColor("#EEEEEE")
-//         .stroke()
-//         .moveDown(1);
-
-//       doc
-//         .font("Helvetica-Oblique")
-//         .fontSize(11)
-//         .fillColor("#007BFF")
-//         .text("For internal use only. Please do not share with clients.", {
-//           align: "center",
-//         });
-
-//       doc.end();
-//     });
-//   };
-
-//   try {
-//     const invoiceBuffer = await generateInvoiceBuffer();
-//     const adminInvoiceBuffer = await generateAdminInvoiceBuffer();
-
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: "ozlyft@gmail.com",
-//         pass: process.env.PASSWORD,
-//       },
-//     });
-
-//     // Send to client
-//     await transporter.sendMail({
-//       from: "OZLYFT <ozlyft@gmail.com>",
-//       to: clientEmail,
-//       subject: "Your Booking Confirmation - OZLYFT",
-//       html: `
-//         <h2>Thank You for Your Booking!</h2>
-//         <p>Details:</p>
-//         <ul>
-//           <li><strong>Name:</strong> ${clientName}</li>
-//           <li><strong>Phone:</strong> ${clientPhone}</li>
-//           <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-//             pickAddress
-//           )}" target="_blank">${pickAddress}</a></li>
-//           <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-//             dropAddress
-//           )}" target="_blank">${dropAddress}</a></li>
-//           <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-//           <li><strong>Car:</strong> ${carName}</li>
-//         </ul>
-//         <p>Invoice attached.</p>
-//       `,
-//       attachments: [{ filename: "Invoice.pdf", content: invoiceBuffer }],
-//     });
-
-//     // Send to admin
-//     await transporter.sendMail({
-//       from: "OZLYFT <ozlyft@gmail.com>",
-//       to: "ehsan_elahi1992@hotmail.com",
-//       cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
-//       subject: "New Booking - Invoice Attached",
-//       html: `
-//         <h2>New Booking Received</h2>
-//         <ul>
-//           <li><strong>Name:</strong> ${clientName}</li>
-//           <li><strong>Email:</strong> ${clientEmail}</li>
-//           <li><strong>Phone:</strong> ${clientPhone}</li>
-//           <li><strong>Pickup:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-//             pickAddress
-//           )}" target="_blank">${pickAddress}</a></li>
-//           <li><strong>Drop-off:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-//             dropAddress
-//           )}" target="_blank">${dropAddress}</a></li>
-//           <li><strong>Date & Time:</strong> ${pickupDate} at ${pickupTime}</li>
-//           <li><strong>Car:</strong> ${carName}</li>
-//         </ul>
-//       `,
-//       attachments: [
-//         { filename: "Client-Booking-Invoice.pdf", content: invoiceBuffer },
-//         { filename: "Admin-Copy-Invoice.pdf", content: adminInvoiceBuffer },
-//       ],
-//     });
-
-//     res.status(200).json({ message: "Emails sent successfully." });
-//   } catch (error) {
-//     console.error("Email Error:", error);
-//     res.status(500).json({ message: "Failed to send emails.", error });
-//   }
-// });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
