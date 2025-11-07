@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Canberra Express Backend is running");
+  res.send("Ozlyft Backend is running");
 });
 
 app.post("/send-booking-email", async (req, res) => {
@@ -250,14 +250,14 @@ app.post("/send-booking-email", async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "azharelahi321@gmail.com",
+        user: "ozlyft@gmail.com",
         pass: process.env.PASSWORD,
       },
     });
 
     // Send to client
     await transporter.sendMail({
-      from: "OZLYFT <azharelahi321@gmail.com>",
+      from: "OZLYFT <ozlyft@gmail.com>",
       to: clientEmail,
       subject: "Your Booking Confirmation - OZLYFT",
       html: `
@@ -282,7 +282,7 @@ app.post("/send-booking-email", async (req, res) => {
 
     // Send to admin
     await transporter.sendMail({
-      from: "OZLYFT Rentals <azharelahi321@gmail.com>",
+      from: "OZLYFT <ozlyft@gmail.com>",
       to: "ehsan_elahi1992@hotmail.com",
       cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
       subject: "New Booking - Invoice Attached",
