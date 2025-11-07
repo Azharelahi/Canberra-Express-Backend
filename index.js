@@ -70,7 +70,9 @@ app.post("/send-booking-email", async (req, res) => {
       !pickupTime ||
       !carName
     ) {
-      return res.status(400).json({ message: "Missing required booking details." });
+      return res
+        .status(400)
+        .json({ message: "Missing required booking details." });
     }
 
     console.log("📦 Booking data received for:", clientName);
@@ -86,7 +88,8 @@ app.post("/send-booking-email", async (req, res) => {
         doc.on("error", reject);
 
         // Title
-        doc.font("Helvetica-Bold")
+        doc
+          .font("Helvetica-Bold")
           .fontSize(24)
           .fillColor("#000")
           .text(
@@ -99,20 +102,35 @@ app.post("/send-booking-email", async (req, res) => {
 
         if (type === "admin") {
           const ref = `OZ-${Date.now()}`;
-          doc.fontSize(12)
+          doc
+            .fontSize(12)
             .fillColor("#555")
             .text(`Booking Reference: ${ref}`, { align: "right" })
             .moveDown(0.5);
           doc
-            .text(`Generated On: ${new Date().toLocaleString()}`, { align: "right" })
+            .text(`Generated On: ${new Date().toLocaleString()}`, {
+              align: "right",
+            })
             .moveDown(1);
         }
 
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#cccccc").stroke().moveDown(1);
+        doc
+          .moveTo(50, doc.y)
+          .lineTo(550, doc.y)
+          .strokeColor("#cccccc")
+          .stroke()
+          .moveDown(1);
 
         const addField = (label, value) => {
-          doc.font("Helvetica-Bold").fillColor("#222").text(`${label}:`, { continued: true });
-          doc.font("Helvetica").fillColor("#000").text(` ${value}`).moveDown(0.4);
+          doc
+            .font("Helvetica-Bold")
+            .fillColor("#222")
+            .text(`${label}:`, { continued: true });
+          doc
+            .font("Helvetica")
+            .fillColor("#000")
+            .text(` ${value}`)
+            .moveDown(0.4);
         };
 
         addField("Client Name", clientName);
@@ -124,7 +142,12 @@ app.post("/send-booking-email", async (req, res) => {
         addField("Car Selected", carName);
 
         doc.moveDown(1.5);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#eeeeee").stroke().moveDown(1.5);
+        doc
+          .moveTo(50, doc.y)
+          .lineTo(550, doc.y)
+          .strokeColor("#eeeeee")
+          .stroke()
+          .moveDown(1.5);
 
         doc
           .font("Helvetica-Oblique")
@@ -152,8 +175,14 @@ app.post("/send-booking-email", async (req, res) => {
     // --- Setup Mail Transporters (separate for clarity) ---
     const auth = { user: "ozlyft@gmail.com", pass: process.env.PASSWORD };
 
-    const clientTransporter = nodemailer.createTransport({ service: "gmail", auth });
-    const adminTransporter = nodemailer.createTransport({ service: "gmail", auth });
+    const clientTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth,
+    });
+    const adminTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth,
+    });
 
     // --- Prepare Email Options ---
     const clientMail = {
@@ -180,8 +209,9 @@ app.post("/send-booking-email", async (req, res) => {
 
     const adminMail = {
       from: "OZLYFT <ozlyft@gmail.com>",
-      to: "ehsan_elahi1992@hotmail.com",
-      cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
+      to: "azharelahi321@gmail.com",
+      // to: "ehsan_elahi1992@hotmail.com",
+      // cc: "azharelahi321@gmail.com, farhanelahi123@gmail.com",
       subject: "New Booking - Admin Copy",
       html: `
         <h2>New Booking Received</h2>
