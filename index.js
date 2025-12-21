@@ -1,12 +1,12 @@
-const express = require("express");
-const cors = require("cors");
-const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
+import express from "express";
+import cors from "cors";
+import nodemailer from "nodemailer";
+import "dotenv/config";
 
-dotenv.config();
+import { connectMongo } from "./config/db.js";
+// dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
-
 const allowedOrigins = [
   "https://www.ozlyft.com.au",
   "https://canberra-express.vercel.app",
@@ -163,4 +163,8 @@ app.post("/send-booking-email", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, async() => {console.log(`Server running on port ${PORT}`)
+
+await connectMongo();
+
+});
