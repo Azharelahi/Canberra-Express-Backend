@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import "dotenv/config";
 
 import { connectMongo } from "./config/db.js";
+import userRouter from "./routes/user.route.js";
 // dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -41,7 +42,7 @@ app.use((req, res, next) => {
   }
   next();
 });
-
+app.use("/v1/user",userRouter)
 app.get("/", (req, res) => {
   res.send("Ozlyft Backend is running");
 });
