@@ -42,6 +42,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+await connectMongo();
 app.use("/v1/user",userRouter)
 app.get("/", (req, res) => {
   res.send("Ozlyft Backend is running");
@@ -166,6 +167,6 @@ app.post("/send-booking-email", async (req, res) => {
 
 app.listen(PORT, async() => {console.log(`Server running on port ${PORT}`)
 
-await connectMongo();
+
 
 });

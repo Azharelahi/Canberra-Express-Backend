@@ -1,21 +1,26 @@
 import mongoose from "mongoose";
-//"mongodb://127.0.0.1:27017/ozlyftdb"
-const MONGO_URI =
-  process.env.MONGO_URI  || "mongodb+srv://azharelahi321:azhar1@cluster0.2w3ir.mongodb.net/ozlyftdb?retryWrites=true&w=majority";
 
-let isConnected = false;
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb+srv://azharelahi321:azhar1@cluster0.2w3ir.mongodb.net/ozlyftdb?retryWrites=true&w=majority";
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 export const connectMongo = async () => {
-  if (isConnected) return;
+  if (cached.conn) return cached.conn;
 
-  try {
-    await mongoose.connect(MONGO_URI);
-    isConnected = true;
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection failed:", err.message);
-    process.exit(1);
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGO_URI).then((mongoose) => {
+      console.log("MongoDB connected");
+      return mongoose;
+    });
   }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
 };
 
 export default mongoose;

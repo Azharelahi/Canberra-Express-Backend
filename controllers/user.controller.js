@@ -10,12 +10,15 @@ const ADMIN_EMAIL = "azharelahi321@gmail.com";
 // Login / Add user
 export const loginUser = async (req, res) => {
   const { name, email } = req.body;
+console.log("user recieved from front end is ",name)
 
   if (!name || !email) {
     return res.status(400).json({ message: "Name and email are required" });
   }
 
   try {
+
+
     let user = await User.findOne({ email });
 
     if (!user) {
