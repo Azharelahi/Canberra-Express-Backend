@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
-const ADMIN_EMAIL = "azharelahi321@gmail.com";
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 // Login / Add user
 export const loginUser = async (req, res) => {

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const MONGO_URI =
-  process.env.MONGO_URI || "mongodb+srv://azharelahi321:azhar1@cluster0.2w3ir.mongodb.net/ozlyftdb?retryWrites=true&w=majority";
+  process.env.MONGO_URI ;
 
 let cached = global.mongoose;
 
