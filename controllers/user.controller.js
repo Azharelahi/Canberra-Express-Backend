@@ -1,32 +1,14 @@
-import User from "./../models/user.js";
+import User from "../models/user.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-export const getAllUsers = async (req, res) => {
-  try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Access denied: admins only" });
-    }
+dotenv.config();
 
-    const users = await User.find();
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
+const ADMIN_EMAIL = "azharelahi321@gmail.com";
 
-
-export const getUserById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Add a new user (role defaults to 'user')
-export const addUser = async (req, res) => {
+// Login / Add user
+export const loginUser = async (req, res) => {
   const { name, email } = req.body;
 
   if (!name || !email) {
@@ -34,30 +16,62 @@ export const addUser = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already exists" });
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({ name, email }); // role defaults to user
+      await user.save();
     }
 
-    const newUser = new User({ name, email }); // role defaults to 'user'
-    await newUser.save();
-    res.status(201).json(newUser);
+    // JWT payload includes role
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.email === ADMIN_EMAIL ? "admin" : "user",
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({ user, token });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Delete a specific user (only admin)
+// Get all users (admin only)
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get specific user
+export const getUserById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Delete user (admin only)
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Access denied: admins only" });
-    }
-
     const user = await User.findByIdAndDelete(id);
     if (!user) return res.status(404).json({ message: "User not found" });
+
     res.status(200).json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
