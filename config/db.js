@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 //"mongodb://127.0.0.1:27017/ozlyftdb"
 const MONGO_URI =
-  process.env.MONGO_URI  || "mongodb+srv://azharelahi321:azhar1@cluster0.2w3ir.mongodb.net/ozlyftdb";
+  process.env.MONGO_URI  || "mongodb+srv://azharelahi321:azhar1@cluster0.2w3ir.mongodb.net/ozlyftdb?retryWrites=true&w=majority";
 
 let isConnected = false;
 
